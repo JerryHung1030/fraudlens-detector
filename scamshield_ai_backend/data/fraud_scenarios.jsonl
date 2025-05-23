@@ -1,0 +1,3 @@
+{"sid": "fraud_001", "text": "This is a phishing attempt scenario.", "metadata": {"scenario": "phishing", "risk_level": "high", "language": "en"}}
+{"sid": "fraud_002", "text": "Investment scam offering unrealistic returns.", "metadata": {"scenario": "investment_scam", "risk_level": "high", "language": "en"}}
+{"sid": "fraud_003", "text": "Lottery scam asking for advance fees.", "metadata": {"scenario": "lottery_scam", "risk_level": "medium", "language": "en"}}
