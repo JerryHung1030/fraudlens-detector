@@ -1,6 +1,6 @@
 # ScamShield‑AI
 
-**Real‑time scam‑post detection & moderator co‑pilot for Facebook Groups — powered by [`RAGCore‑X`](https://github.com/iii-cstiicdc/ragcore-x)**
+**Real‑time scam‑post detection & moderator co‑pilot for Facebook Groups — powered by [`RAGCore‑X`](https://github.com/JerryHung1030/RAGCore-X.git)**
 
 ![ScamShield banner](docs/assets/scamshield_banner.png)
 
