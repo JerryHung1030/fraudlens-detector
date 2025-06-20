@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.managers.blacklist_manager import BlacklistManager
 
@@ -8,6 +9,15 @@ app = FastAPI(
     description="API to find suspicious line ids and urls in text",
     version="1.0.0"    
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 manager = BlacklistManager()
 
 class AnalyzeRequest(BaseModel):

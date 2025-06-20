@@ -123,6 +123,8 @@ class BlacklistManager:
     def check_urls(self, paragraph: str) -> tuple[list[str], list[dict]]:      
         url_results = []
         url_lst = self.parse_url(paragraph)
+        # remove duplicate urls
+        url_lst = list(set(url_lst))
         
         # Check if the urls are in the blacklist
         if url_lst:
