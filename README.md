@@ -81,7 +81,7 @@ flowchart TD
         Z4 --> Y1
     end
 
-    %%
+    %% ===Connection===
     Z5 --> E
 ```
 ---
@@ -169,8 +169,8 @@ The API will be available at `http://localhost:8001` by default.
 
 ## Scam Detection Flow Introduction
 Below is a high-level illustration of how input data flows through the scam detection pipeline.
-![](./docs/images/29.png)
+![](./docs/images/api_usage_flow.png)
 
 ## Model Training Introduction
 This diagram outlines the optional model training process for advanced usage.
-![](./docs/images/28.png)
+![](./docs/images/algo_flow.png)
