@@ -1,52 +1,58 @@
-# src/managers/blacklist_manager.py
-import re
-import whois
-import numpy as np
-import pandas as pd
+# ===============================================================================
+#     Module Name: blacklist_manager.py
+#     Description: Class for url and line id analysis, which accepts a paragraph and returns a list of line ids and urls with their analysis results
+#     Author: Jerry, Ken, SJ
+#     Last Updated: 2025-06-23
+#     Version: 1.0.0
+#     Notes: 無
+# ===============================================================================
 
-# from typing import List, Tuple, Optional, Dict
-from urllib.parse import urlparse
 from datetime import datetime, timezone
 from dateutil import parser
+import numpy as np
 import onnxruntime as rt
+import pandas as pd
+import re
+from urllib.parse import urlparse
+import whois
 
+# Define line id and url regex
+# TODO: improve regex to handle more cases (differrent formats)
 LINE_RE_LIST = [
-    {'re': "(lineid)([^@])?([@]?[a-z0-9-_+]{4,})", 'idx': 2},
-    {'re': "(line).+?(id|帳號)([^@a-z0-9])?([@]?[a-z0-9-_+*]{4,})", 'idx': 3}
+    {"re": "(lineid)([^@])?([@]?[a-z0-9-_+]{4,})", "idx": 2},
+    {"re": "(line).+?(id|帳號)([^@a-z0-9])?([@]?[a-z0-9-_+*]{4,})", "idx": 3},
 ]
-URL_RE_LIST = [
-    {'re': r"(https?:\/\/|www\.)([^\s\"\-\'\.\/<>]+)\.([a-zA-Z0-9\.\/#=]+)"}
-]
+URL_RE_LIST = [{"re": r"(https?:\/\/|www\.)([^\s\"\-\'\.\/<>]+)\.([a-zA-Z0-9\.\/#=]+)"}]
 
 
 class BlacklistManager:
-    LINE_RE_LIST = [
-        {'re': "(lineid)([^@])?([@]?[a-z0-9-_+]{4,})", 'idx': 2},
-        {'re': "(line).+(id|帳號)([^@a-z0-9])?([@]?[a-z0-9-_+*]{4,})", 'idx': 3}
-    ]
-    URL_RE_LIST = [
-        {'re': r"(https?:\/\/|www\.)([^\s\"\-\'\.\/<>]+)\.([a-zA-Z0-9\.\/#=]+)"}
-    ]
-    
     def __init__(self, model_path: str = None, lineid_blacklist_path: str = None, domain_blacklist_path: str = None):
-        self.model_path = model_path or "src/blacklist_analysis/model/GradientBoostingClassifier_model.onnx"
-        self.lineid_blacklist_path = lineid_blacklist_path or "src/blacklist_analysis/data/database/lineid_database.xlsx"
-        self.domain_blacklist_path = domain_blacklist_path or "src/blacklist_analysis/data/database/url_bad_database.xlsx"
+        # Init pretrained model and blacklist db path
+        self.model_path = model_path or "src/model/GradientBoostingClassifier_model.onnx"
+        self.lineid_blacklist_path = (
+            lineid_blacklist_path or "db/lineid_database.xlsx"
+        )
+        self.domain_blacklist_path = (
+            domain_blacklist_path or "db/url_bad_database.xlsx"
+        )
+        # # load model
+        # self.session = self._load_model(self.model_path)
+        # Load blacklist
         self.lineid_blacklist = self._load_blacklist(self.lineid_blacklist_path, "id")
         self.domain_blacklist = self._load_blacklist(self.domain_blacklist_path, "url")
-    
+
     # ---------------------------------------
     #  main function to analyze a paragraph
     # ---------------------------------------
     def analyze(self, paragraph: str) -> dict:
         lineid_lst, lineid_results = self.check_line_ids(paragraph)
         url_lst, url_results = self.check_urls(paragraph)
-        
+
         results = {
             "line_id_list": lineid_lst,
             "url_list": url_lst,
             "line_id_details": lineid_results,
-            "url_details": url_results
+            "url_details": url_results,
         }
         return results
 
@@ -58,74 +64,87 @@ class BlacklistManager:
         except (FileNotFoundError, KeyError):
             print(f"[Error] Failed to load {column} blacklist from {path}")
             return []
-    
+        
+    # def _load_model(self, path: str) -> rt.InferenceSession:
+    #     try:
+    #         return rt.InferenceSession(path)
+    #     except Exception as e:
+    #         print(f"[Error] Failed to load model from {path}, Error: {e}")
+    #         return None
+
     # -----------------------------
     # Line ID Logic
     # -----------------------------
     """
     Find line ids in a given paragraph
     """
+
     def parse_lineid(self, paragraph: str) -> list[str]:
         found_ids = []
         for id_pattern in LINE_RE_LIST:
-            match_lst = re.findall(id_pattern['re'], paragraph, re.IGNORECASE)
+            match_lst = re.findall(id_pattern["re"], paragraph, re.IGNORECASE)
             if match_lst:
                 for match in match_lst:
-                    found_id = match[id_pattern['idx']]
+                    found_id = match[id_pattern["idx"]]
                     if found_id.lower() not in ["", "line", "id", "https", "http", "7-11"]:
                         found_ids.append(found_id)
-        return found_ids    
+        return found_ids
 
     """
     Check the line ids in the found list: 
         1. compare with lineid blacklist
     """
+
     def check_line_ids(self, paragraph: str) -> tuple[list[str], list[dict]]:
         lineid_results = []
         lineid_lst = self.parse_lineid(paragraph)
-        
+
         # Check if the line ids are in the blacklist
         if lineid_lst:
             for lineid in lineid_lst:
                 if lineid in self.lineid_blacklist:
-                    result = 0      # lineid in blacklist
+                    result = 0  # lineid in blacklist
                 else:
-                    result = 1      # lineid not in blacklist
-                    
+                    result = 1  # lineid not in blacklist
+
                 # Add result to the list
-                lineid_results.append({
-                    "id": lineid,
-                    "result": result,
-                })
-            
+                lineid_results.append(
+                    {
+                        "id": lineid,
+                        "result": result,
+                    }
+                )
+
         return lineid_lst, lineid_results
-    
+
     # -----------------------------
     # URL Logic
     # -----------------------------
     """
     Find urls in a given paragraph
     """
+
     def parse_url(self, paragraph: str) -> list[str]:
         found_urls = []
         for url_pattern in URL_RE_LIST:
-            match_lst = re.findall(url_pattern['re'], paragraph, re.IGNORECASE)
+            match_lst = re.findall(url_pattern["re"], paragraph, re.IGNORECASE)
             if match_lst:
                 for match in match_lst:
                     found_urls.append(f"{match[0]}{match[1]}.{match[2]}")
         return found_urls
-  
+
     """
     Check the urls in the found list: 
         1. compare with url blacklist
         2. use model to predict probability
     """
-    def check_urls(self, paragraph: str) -> tuple[list[str], list[dict]]:      
+
+    def check_urls(self, paragraph: str) -> tuple[list[str], list[dict]]:
         url_results = []
         url_lst = self.parse_url(paragraph)
         # remove duplicate urls
         url_lst = list(set(url_lst))
-        
+
         # Check if the urls are in the blacklist
         if url_lst:
             for url in url_lst:
@@ -133,26 +152,25 @@ class BlacklistManager:
                     # Parse url to get domain
                     parsed_url = urlparse(url)
                     domain = (parsed_url.hostname or url).lower().strip()
-                    
+
                     if not domain or "." not in domain:
                         print(f"[ERROR] Bad domain parsed: {url}")
-                        url_results.append({
-                            "status": 0,
-                            "url": url,
-                            "error_code": 0,
-                            "problem": "Failed to parse url domain."
-                        })
+                        url_results.append(
+                            {"status": 0, "url": url, "error_code": 0, "problem": "Failed to parse url domain."}
+                        )
                         continue
                     # 1. Check if the domain is in the blacklist
                     if domain in self.domain_blacklist:
-                        url_results.append({
-                            "status": 1,
-                            "url": url,
-                            "result": 0,
-                            "source": "dataset",
-                            "scam_probability": 1.0,
-                            "level": "HIGH"
-                        })
+                        url_results.append(
+                            {
+                                "status": 1,
+                                "url": url,
+                                "result": 0,
+                                "source": "dataset",
+                                "scam_probability": 1.0,
+                                "level": "HIGH",
+                            }
+                        )
                     # 2. Use model to predict probability
                     else:
                         """
@@ -163,57 +181,55 @@ class BlacklistManager:
                         """
                         result = self.url_analysis(domain)
                         if result["status"] == 0:
-                            url_results.append({
-                                "status": 0,
-                                "url": url,
-                                "error_code": result.get("error_code", 99),
-                                "error_msg": result.get("error_msg", "Unknown error")
-                            })
+                            url_results.append(
+                                {
+                                    "status": 0,
+                                    "url": url,
+                                    "error_code": result.get("error_code", 99),
+                                    "error_msg": result.get("error_msg", "Unknown error"),
+                                }
+                            )
                         else:
-                            url_results.append({
-                                "status": 1,
-                                "url": url,
-                                "result": result["result"],
-                                "source": "model",
-                                "scam_probability": result["scam_probability"],
-                                "level": result["level"]
-                            })
+                            url_results.append(
+                                {
+                                    "status": 1,
+                                    "url": url,
+                                    "result": result["result"],
+                                    "source": "model",
+                                    "scam_probability": result["scam_probability"],
+                                    "level": result["level"],
+                                }
+                            )
                 except Exception as e:
                     print(f"[ERROR] Error parsing url: {url}", e)
-                    url_results.append({
-                        "status": 0,
-                        "url": url,
-                        "problem": "Failed to parse url domain."
-                    })
-        
+                    url_results.append({"status": 0, "url": url, "problem": "Failed to parse url domain."})
+
         return url_lst, url_results
+
     """
     Analyze url scam probability:
         1. Get whois data
         2. Process whois data
         3. Use model to predict
     """
-    def url_analysis(self, domain: str):       # url not from dataset has no found date
+
+    def url_analysis(self, domain: str):  # url not from dataset has no found date
         try:
             whois_data = whois.whois(domain)
             print(whois_data)
-            
-            try:  
+
+            try:
                 if not whois_data or isinstance(whois_data, str):
                     return {
                         "status": 0,
                         "error_code": 2,
-                        "error_msg": "Invalid whois data received (empty or unexpected format)."
+                        "error_msg": "Invalid whois data received (empty or unexpected format).",
                     }
                 # Check if whois data is valid
                 creation_date_raw = whois_data.get("creation_date")
                 if creation_date_raw is None:
-                    return {
-                        "status": 0,
-                        "error_code": 3,
-                        "error_msg": "Whois data contains null values."
-                    }
-                
+                    return {"status": 0, "error_code": 3, "error_msg": "Whois data contains null values."}
+
                 # Get domain tlds
                 tlds = self.get_tlds(domain)
 
@@ -227,7 +243,7 @@ class BlacklistManager:
                 remaining_time = (expiration_date - reference_date).days if expiration_date else 0
                 total_life_time = (expiration_date - creation_date).days if expiration_date else 0
                 register_country = whois_data.get("country", "Unknown")
-                
+
                 # Determine existence columns
                 org_exist = True if (whois_data.get("org") or whois_data.get("organization")) else False
 
@@ -247,39 +263,26 @@ class BlacklistManager:
                 outputs = sess.run(None, input_data)
                 pred_label = outputs[0][0]
                 pred_prob_bad = outputs[1][0][0]
-                
-                if pred_prob_bad > 0.75:
+
+                if pred_prob_bad > 0.70:
                     scam_level = "HIGH"
-                elif pred_prob_bad > 0.5:
+                elif pred_prob_bad >= 0.40:
                     scam_level = "MEDIUM"
                 else:
                     scam_level = "LOW"
-                
-                return {
-                    "status": 1,
-                    "result": int(pred_label),
-                    "scam_probability": pred_prob_bad,
-                    "level": scam_level
-                }
+
+                return {"status": 1, "result": int(pred_label), "scam_probability": pred_prob_bad, "level": scam_level}
             except Exception as e:
-                return {
-                    "status": 0,
-                    "error_code": 99,
-                    "error_msg": f"{str(e)}"
-                }
+                return {"status": 0, "error_code": 99, "error_msg": f"{str(e)}"}
         except Exception as e:
-            return {
-                "status": 0,
-                "error_code": 1,
-                "error_msg": f"Failed to call whois data: {str(e)}"
-            }
-    
+            return {"status": 0, "error_code": 1, "error_msg": f"Failed to call whois data: {str(e)}"}
+
     # Get domain tlds
     def get_tlds(self, domain: str):
         return domain.split(".")[-1].lower() if "." in domain else ""
-    
+
     # Define the date to be used from a list of dates
-    def extract_datetime(self, dates, pick='min'):
+    def extract_datetime(self, dates, pick="min"):
         try:
             if not dates:
                 return None
@@ -291,7 +294,7 @@ class BlacklistManager:
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=timezone.utc)
                     parsed_dates.append(dt)
-                dt = min(parsed_dates) if pick == 'min' else max(parsed_dates)
+                dt = min(parsed_dates) if pick == "min" else max(parsed_dates)
             else:
                 dt = dates if isinstance(dates, datetime) else parser.parse(dates)
                 if dt.tzinfo is None:
