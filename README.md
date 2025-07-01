@@ -1,4 +1,4 @@
-# Scamshield Ai
+# Faudlens Detector
 
 > **A scam detection tool for identifying fraudulent Line IDs and URLs. It is a modular engine that extracts Line IDs and URLs from input text, performs blacklist matching against open data sources, and—if no match is found for a URL—retrieves WHOIS information to be processed and fed into a pretrained data mining model for scam probability estimation.**
 >
@@ -21,11 +21,11 @@
 3. [🗺️ Architecture Overview](#-architecture-overview)
 4. [📂 Project Structure](#-project-structure)
 5. [🚀 Quick Start](#-quick-start)
-6. [⚙️ Configuration](#-configuration) <!-- 如果有這一節，請加上 -->
-7. [🛠️ CLI & API Usage](#-cli--api-usage)
-8. [🧪 Testing](#-testing)
-9. [🤝 Contributing](#-contributing)
-10. [📄 License](#-license)
+6. [🛠️ API Usage](#-api-usage)
+7. [📤 Output Format](#-output-format)
+8. [📄 Scam Detection Flow Introduction](#-scam-detection-flow-introduction)
+9. [🧑‍💻 Model Training](#model-training-introduction)
+10. [🔭 Future Work](#future-work)
 
 
 ---
@@ -60,15 +60,11 @@ Customize the detection pipeline by:
 
 ```mermaid
 flowchart TD
-    %% === Main Pipeline ===
-    A["<b>User Input</b><br/>Raw Text"] --> B["Extract Line IDs & URLs"]
-    B --> C["<b>Blacklist DB Matching</b> with Open Data"]
-    C --> D["<b>WHOIS Enrichment</b><br/>for Unmatched URLs"]
-    D --> E["<b>Scam Prediction</b><br/>apply Pretrained Model"]
-    E --> F["<b>Return Result</b><br/>in Structured Output"]
+
+    %% ===Connection===
 
     %% === Optional Workflow ===
-    subgraph "DB & Model Preparation (Optional)"
+    subgraph "Data & Model Preparation"
         Z1["<b>Download Open Data</b><br/>Line ID & URL Blacklist"]
         Z2["<b>Extract Required Fields</b><br/>Save to .xlsx DB Files"]
         Z3["<b>URL Feature Extraction</b><br/>WHOIS Data <br> Fetching & Processing"]
@@ -76,17 +72,34 @@ flowchart TD
         Z5["<b>Model Training</b><br/>export into ONNX"]
 
         Y1["<b>Feature Selection</b><br>Evaluate which <br> columns to use"]
-        Y2["<b>Model Selection</b><br>Choose a algorithm with better performance"]
+        Y2["<b>Model Selection</b><br/>Choose a algorithm with better performance"]
 
         Z1 --> Z2 --> Z3 --> Z4 --> Z5
         Y1 --> Y2 --> Z5
         Z4 --> Y1
     end
 
-    %% ===Connection===
-    Z5 --> E
+    %% === Main Pipeline ===
+    subgraph "Basic Usage"
+      A["<b>User Input</b><br/>Raw Text"] --> B["Extract Line IDs & URLs"]
+      B --> |Optional <br/> Data Preparation| C["<b>Blacklist DB Matching</b> <br/> with Open Data"]
+      C --> D["<b>WHOIS Enrichment</b><br/>for Unmatched URLs"]
+      D -->| Optional <br/> Model Preparation | E["<b>Scam Prediction</b><br/>with Pretrained Model"]
+      E --> F["<b>Return Result</b><br/>in Structured Output"]
+
+    end
 ```
+
+<br/>
+
+| | Basic Usage (Left) | Data & Model Preparation (Right) |
+|:-:|:-:|:-:|
+| Mode | Basic Mode | Advanced Mode |
+| Description | The default and most straightforward way to use Fraudlens Detector. | An optional advanced workflow for customizing the detection engine. |
+| Detail | Uses a pretrained model and open-data blacklists via API. No setup or model training required. | Involves dataset preparation, feature selection, model training, and ONNX export. Suitable for advanced or research-driven use cases. |
+
 ---
+
 ## 📂 Project Structure
 
 ```text
@@ -155,7 +168,7 @@ $ python run_api.py
 
 ## 🛠️ API Usage
 
-#### Start the API Server
+### Start the API Server
 
 ```bash
 python run_api.py
@@ -163,18 +176,18 @@ python run_api.py
 
 The API will be available at `http://localhost:8001` by default.
 
-#### Main Endpoints
+### Main Endpoints
 
 | Name | Method | Route | Function |
 |:-:|:-:|:-:|:-:|
 | blacklist_api | POST | `/analyze` | Accepts a text input, returns a list of extracted Line IDs and URLs along with their respective detection results. |
 
-#### Full API Documentation
+### Full API Documentation
 More detailed API document is available at [docs/api_spec.xlsx](docs/api_spec.xlsx)
 
 ## 📤 Output Format
 
-#### Response structure
+### Response structure
 A structured JSON response will be returned in the following format:
 
 ```json
@@ -188,8 +201,6 @@ A structured JSON response will be returned in the following format:
     "https://onlytoppc24.com/ucy9mf2#/login",
     "https://www.ettoday.net/news/focus/",
     "https://www.qtdbsv.com/",
-    "http://sharefunpc24.com/bcew9vc#/login",
-    "www.couponamm.com/"
   ],
   "line_id_details": [
     {
@@ -229,7 +240,7 @@ A structured JSON response will be returned in the following format:
   ]
 }
 ```
-#### Result Reference
+### Result Reference
 - Result
   | code | result |
   |:-:|:-:|
@@ -249,17 +260,19 @@ A structured JSON response will be returned in the following format:
 
 ---
 
-## Scam Detection Flow Introduction
+## 📄 Scam Detection Flow Introduction
 Below is a high-level illustration of how input data flows through the scam detection pipeline.
+
 ![](./docs/images/api_usage_flow.png)
 
 ---
 
-## Model Training Introduction
+## 🧑‍💻 Model Training Introduction
 This diagram outlines the optional model training process for advanced usage.
+
 ![](./docs/images/algo_flow.png)
 
 ---
 
-## Future Work
-- Improve regular expression to match more kinds case formats.  
+## 🔭 Future Work
+- Improve regular expression to match more kinds of case formats.  
