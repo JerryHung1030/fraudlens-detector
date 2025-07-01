@@ -24,8 +24,8 @@
 6. [🛠️ API Usage](#-api-usage)
 7. [📤 Output Format](#-output-format)
 8. [📄 Scam Detection Flow Introduction](#-scam-detection-flow-introduction)
-9. [🧑‍💻 Model Training](#model-training-introduction)
-10. [🔭 Future Work](#future-work)
+9. [🧑‍💻 Model Training](#-model-training-introduction)
+10. [🔭 Future Work](#-future-work)
 
 
 ---
