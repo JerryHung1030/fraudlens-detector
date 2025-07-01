@@ -20,7 +20,7 @@
 2. [🧩 Usage Modes](#-usage-modes)
 3. [🗺️ Architecture Overview](#-architecture-overview)
 4. [📂 Project Structure](#-project-structure)
-5. [🚀 Quick Start](#-quick-start)
+5. [🚀 How to Run](#-how-to-run)
 6. [🛠️ API Usage](#-api-usage)
 7. [📤 Output Format](#-output-format)
 8. [📄 Scam Detection Flow Introduction](#-scam-detection-flow-introduction)
@@ -135,43 +135,80 @@ flowchart TD
 
 ---
 
-## 🚀 Quick Start
+## 🚀 How to Run
+The steps below assume a completely clean environment. They outline how to install Docker, build, and run the containers.
 
 ### 1. Prerequisites
 
-* **Python ≥ 3.10**
+- **Python ≥ 3.12**
+- **Docker** and **Docker Compose**
 
-### 2. Environment Setup
-
-- None
-
-### 3. Clone & Install
+### 2. Install Docker & Compose
 
 ```bash
-# Clone repo
-$ git clone https://github.com/JerryHung1030/scamshield-ai.git
-$ cd scamshield-ai
-
-# Create and activate venv
-$ python -m venv .venv && source .venv/bin/activate
-
-# Install dependencies
-$ pip install -r requirements.txt
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+Check installation
+```bash
+docker --version        # or: sudo docker run hello-world
+docker compose version  # new‑style Compose CLI
 ```
 
-### 4. Launch the **FastAPI** endpoint 
+### 3. Clone Repo
+
 ```bash
-$ python run_api.py
+$ git clone https://github.com/JerryHung1030/fraudlens-detector.git
+$ cd scamshield-ai
+```
+
+### 4. Run with Docker Compose (recommended)
+```bash
+sudo docker compose up --build
+```
+
+To stop the service, press CTRL+C in the terminal or run:
+```bash
+docker-compose down
 ```
 
 ---
 
 ## 🛠️ API Usage
 
-### Start the API Server
+If you want to run the API without Docker:
+
+#### 1. Clone repo
 
 ```bash
+$ git clone https://github.com/JerryHung1030/fraudlens-detector.git
+$ cd scamshield-ai
+```
+#### 2. Create and activate venv
+```bash
+# Linux / macOS
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Windows PowerShell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1  # PowerShell
+# or Windows CMD
+.\.venv\Scripts\activate.bat
+```
+
+#### Install dependencies
+```bash
+$ pip install -r requirements.txt
+```
+
+#### Start the API Server
+```bash
 python run_api.py
+```
+or
+```bash
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
 The API will be available at `http://localhost:8001` by default.
@@ -200,7 +237,7 @@ A structured JSON response will be returned in the following format:
   "url_list": [
     "https://onlytoppc24.com/ucy9mf2#/login",
     "https://www.ettoday.net/news/focus/",
-    "https://www.qtdbsv.com/",
+    "https://www.qtdbsv.com/"
   ],
   "line_id_details": [
     {

@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fraudlens-api
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+    working_dir: /app
+    restart: unless-stopped
