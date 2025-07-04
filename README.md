@@ -169,12 +169,17 @@ docker compose version  # new‑style Compose CLI
 
 ```bash
 $ git clone https://github.com/JerryHung1030/fraudlens-detector.git
-$ cd scamshield-ai
+$ cd fraudlens-detector
 ```
 
-### 4. Run with Docker Compose (recommended)
+### 4. Run with Docker Compose
+To start the containers in detached mode (running in the background):
 ```bash
-sudo docker compose up --build
+sudo docker compose up -d
+```
+If you need to rebuild the images before starting (e.g., after changing the Dockerfile or dependencies):
+```bash
+sudo docker compose up -d --build
 ```
 
 > The API will be available at `http://localhost:8001` by default.
